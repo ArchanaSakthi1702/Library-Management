@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord
+from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
@@ -121,12 +121,14 @@ class BookRequestSerializer(serializers.ModelSerializer):
         if borrowed:
             raise serializers.ValidationError("This copy is already borrowed.")
         return value
-# serializers.py
+        
 
+# serializers.py
 class BorrowRecordSerializer(serializers.ModelSerializer):
     student_username = serializers.CharField(source='student.username', read_only=True)
     book_title = serializers.CharField(source='book_copy.book.title', read_only=True)
     accession_no = serializers.CharField(source='book_copy.accession_no', read_only=True)
+    fine = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)  # ✅ NEW
 
     class Meta:
         model = BorrowRecord
@@ -137,13 +139,16 @@ class BorrowRecordSerializer(serializers.ModelSerializer):
             "accession_no",
             "borrow_date",
             "return_date",
-            "returned"
+            "returned",
+            "fine",    # ✅ Include fine here
         ]
 
-  
+
+
 class StudentBorrowRecordSerializer(serializers.ModelSerializer):
     book_title = serializers.CharField(source='book_copy.book.title', read_only=True)
     accession_no = serializers.CharField(source='book_copy.accession_no', read_only=True)
+    fine = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)  # ✅ NEW
 
     class Meta:
         model = BorrowRecord
@@ -153,9 +158,22 @@ class StudentBorrowRecordSerializer(serializers.ModelSerializer):
             "accession_no",
             "borrow_date",
             "return_date",
-            "returned"
+            "returned",
+            "fine",   # ✅ Include fine here
         ]
 
 
 
-    
+class BookNotificationRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookNotificationRequest
+        fields = ['id', 'student', 'book', 'notified']
+        read_only_fields = ['student', 'notified']
+
+
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'message', 'read', 'created_at']

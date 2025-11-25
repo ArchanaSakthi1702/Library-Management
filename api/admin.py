@@ -51,14 +51,14 @@ class BookCopyAdmin(admin.ModelAdmin):
 class BookRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "student", "book_copy", "status", "request_date", "admin_comment")
     list_filter = ("status", "request_date")
-    search_fields = ("student__username", "book_copy__accession_no")
+    search_fields = ("student_username", "book_copy_accession_no")
 
 
 # --- Borrow Record Admin ---
 class BorrowRecordAdmin(admin.ModelAdmin):
     list_display = ("id", "student", "book_copy", "borrow_date", "return_date", "returned")
     list_filter = ("returned", "borrow_date", "return_date")
-    search_fields = ("student__username", "book_copy__accession_no")
+    search_fields = ("student_username", "book_copy_accession_no")
 
 
 # --- Register models ---

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser,BaseUserManager
 from datetime import date, timedelta
+from django.contrib.auth import get_user_model
 
 class CustomUserManager(BaseUserManager):
     use_in_migrations = True
@@ -41,7 +42,7 @@ class CustomUser(AbstractUser):
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.username} ({self.role})"
 
 class Book(models.Model):
@@ -55,7 +56,7 @@ class Book(models.Model):
     total_copies = models.PositiveIntegerField(default=1)       # default 1
     available_copies = models.PositiveIntegerField(default=1)   # default 1
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.title} by {self.author}"
 
 # Individual physical copy of a book
@@ -63,7 +64,7 @@ class BookCopy(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="copies")
     accession_no = models.CharField(max_length=30, unique=True)  # Unique ID for each copy 
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.book.title} - Copy {self.accession_no}"
     
 
@@ -81,7 +82,7 @@ class BookRequest(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     admin_comment = models.TextField(blank=True, null=True)  # Optional note by admin
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.student.username} requested {self.book_copy.accession_no} ({self.status})"
 
 
@@ -91,7 +92,8 @@ class BookRequest(models.Model):
 def default_return_date():
     return date.today() + timedelta(days=15)
 
-# Borrow record (only after admin approves)
+CustomUser = get_user_model()
+
 class BorrowRecord(models.Model):
     student = models.ForeignKey(
         CustomUser, 
@@ -100,8 +102,50 @@ class BorrowRecord(models.Model):
     )
     book_copy = models.ForeignKey(BookCopy, on_delete=models.CASCADE)
     borrow_date = models.DateField(auto_now_add=True)
-    return_date = models.DateField(default=default_return_date)  # use function instead of lambda
+    return_date = models.DateField(default=default_return_date)  # Expected return date
     returned = models.BooleanField(default=False)
+    fine = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)  # ✅ NEW
 
-    def __str__(self):
+    FINE_PER_DAY = 5  # You can change the amount
+
+    def calculate_fine(self):
+        """Calculate and update fine based on overdue days."""
+        if self.returned:
+            return  # No fine if already returned
+
+        today = date.today()
+        overdue_days = (today - self.return_date).days
+
+        if overdue_days > 0:
+            self.fine = overdue_days * self.FINE_PER_DAY
+            self.save()
+
+    def _str_(self):
         return f"{self.student.username} borrowed {self.book_copy.accession_no}"
+
+
+
+
+
+class BookNotificationRequest(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': 'MEMBER'})
+    book = models.ForeignKey("Book", on_delete=models.CASCADE)
+    notified = models.BooleanField(default=False)  # Has student been notified?
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("student", "book")  # Avoid duplicate requests
+
+    def _str_(self):
+        return f"{self.student.username} wants {self.book.title}"
+
+
+class Notification(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': 'MEMBER'})
+    message = models.TextField()
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def _str_(self):
+        return f"Notification for {self.student.username}: {self.message[:20]}"

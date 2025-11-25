@@ -1,6 +1,6 @@
 from rest_framework import generics,status,permissions
-from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord
-from .serializers import UserRegisterSerializer,BookSerializer,BookRequestSerializer,BorrowRecordSerializer,UserSerializer,StudentBorrowRecordSerializer
+from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification
+from .serializers import UserRegisterSerializer,BookSerializer,BookRequestSerializer,BorrowRecordSerializer,UserSerializer,StudentBorrowRecordSerializer,BookNotificationRequestSerializer,NotificationSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
@@ -8,6 +8,24 @@ from rest_framework.response import Response
 from api import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import ListAPIView
+
+class RequestBookNotification(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, book_id):
+        student = request.user
+        try:
+            book = Book.objects.get(id=book_id)
+        except Book.DoesNotExist:
+            return Response({"detail": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        obj, created = BookNotificationRequest.objects.get_or_create(student=student, book=book)
+        if not created:
+            return Response({"detail": "You already requested notification for this book"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = BookNotificationRequestSerializer(obj)
+        return Response(serializer.data)
 
 
 class RegisterUserView(generics.CreateAPIView):
@@ -454,7 +472,7 @@ class ReturnBookView(generics.UpdateAPIView):
 
 class AvailableBooksAPIView(APIView):
     def get(self, request):
-        books = Book.objects.filter(available_copies__gt=0)  # only available books
+        books = Book.objects.all()  # only available books
         serializer = BookSerializer(books, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -712,3 +730,12 @@ def scanner_return_api(request):
         "accession_no": book_copy.accession_no,
         "available_copies": book.available_copies
     })
+
+
+
+class MyNotifications(ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(student=self.request.user).order_by('-created_at')

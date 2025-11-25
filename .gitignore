@@ -4,6 +4,6 @@ migrations/
 *venv/
 *static*/
 templates/
-db.sqlite3/
+db.sqlite3
 media/
 

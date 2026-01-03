@@ -39,6 +39,7 @@ MIDDLEWARE = [
 
 # Application definition
 INSTALLED_APPS = [
+    'api',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,7 +49,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'background_task',
     'corsheaders',
-    'api',
     'jazzmin',
     'cloudinary',
     'cloudinary_storage'

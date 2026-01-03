@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser,BaseUserManager
 from datetime import date, timedelta
 from django.contrib.auth import get_user_model
+from cloudinary.models import CloudinaryField
 
 class CustomUserManager(BaseUserManager):
     use_in_migrations = True
@@ -52,7 +53,7 @@ class Book(models.Model):
     category = models.CharField(max_length=50)
     publisher = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to="book_images/", blank=True, null=True)
+    image = CloudinaryField('book image', blank=True, null=True)
     total_copies = models.PositiveIntegerField(default=1)       # default 1
     available_copies = models.PositiveIntegerField(default=1)   # default 1
 

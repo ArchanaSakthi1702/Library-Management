@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'api',
     'jazzmin',
+    'cloudinary',
+    'cloudinary_storage'
 ]
 
 ROOT_URLCONF = 'lms_backend.urls'
@@ -116,3 +118,14 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
+    "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
+}
+
+# Media files storage
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+# Optional: URL prefix for Cloudinary media
+MEDIA_URL = "/media/"

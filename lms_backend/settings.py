@@ -73,10 +73,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lms_backend.wsgi.application'
 
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
 # Database from .env
 DATABASE_URL = os.environ.get("DATABASE_URL")
 DATABASES = {
@@ -118,14 +114,11 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+# Cloudinary configuration
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
     "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
     "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
 }
 
-# Media files storage
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-
-# Optional: URL prefix for Cloudinary media
-MEDIA_URL = "/media/"

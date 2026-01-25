@@ -1,6 +1,6 @@
 # tasks.py
 from background_task import background
-from datetime import date
+from datetime import date,timedelta
 from .models import BorrowRecord, BookNotificationRequest, Notification, Book
 
 @background(schedule=60)  # runs every minute
@@ -41,3 +41,33 @@ def send_book_available_notifications():
 @background(schedule=60)  # 60 seconds later for first run
 def send_book_available_notifications_task():
     send_book_available_notifications()
+
+
+
+@background(schedule=60)  # runs every minute
+def due_date_reminder_task():
+    """
+    Notify students when their borrowed book is near the return date.
+    """
+    today = date.today()
+    reminder_date = today + timedelta(days=2)  # 2 days before due
+
+    records = BorrowRecord.objects.filter(
+        returned=False,
+        return_date=reminder_date,
+        due_soon_notified=False
+    )
+
+    for record in records:
+        Notification.objects.create(
+            student=record.student,
+            message=(
+                f"Reminder: Your borrowed book "
+                f"'{record.book_copy.book.title}' "
+                f"is due on {record.return_date}. "
+                f"Please return it on time to avoid fines."
+            )
+        )
+
+        record.due_soon_notified = True
+        record.save()

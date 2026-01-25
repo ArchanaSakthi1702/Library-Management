@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Book, BookCopy, BookRequest, BorrowRecord
+from .models import CustomUser, Book, BookCopy, BookRequest, BorrowRecord,EBookBookmark,EBook
 from django.contrib.admin import AdminSite
 # Add custom CSS
 class CustomAdminSite(AdminSite):
@@ -59,6 +59,36 @@ class BorrowRecordAdmin(admin.ModelAdmin):
     list_display = ("id", "student", "book_copy", "borrow_date", "return_date", "returned")
     list_filter = ("returned", "borrow_date", "return_date")
     search_fields = ("student_username", "book_copy_accession_no")
+
+@admin.register(EBook)
+class EBookAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "author",
+        "format",
+        "category",
+        "is_active",
+        "uploaded_at",
+    )
+    list_filter = ("format", "category", "is_active")
+    search_fields = ("title", "author", "isbn")
+    readonly_fields = ("uploaded_at",)
+
+
+@admin.register(EBookBookmark)
+class EBookBookmarkAdmin(admin.ModelAdmin):
+    list_display = (
+        "student",
+        "ebook",
+        "page_number",
+        "location",
+        "created_at",
+    )
+    list_filter = ("ebook",)
+    search_fields = ("student__username", "ebook__title")
+    readonly_fields = ("created_at",)
+
+
 
 
 # --- Register models ---

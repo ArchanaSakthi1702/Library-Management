@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser,BaseUserManager
 from datetime import date, timedelta
 from django.contrib.auth import get_user_model
 from cloudinary.models import CloudinaryField
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     use_in_migrations = True
@@ -108,6 +109,7 @@ class BorrowRecord(models.Model):
     fine = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)  # ✅ NEW
 
     FINE_PER_DAY = 5  # You can change the amount
+    due_soon_notified = models.BooleanField(default=False)
 
     def calculate_fine(self):
         """Calculate and update fine based on overdue days."""
@@ -150,3 +152,54 @@ class Notification(models.Model):
 
     def _str_(self):
         return f"Notification for {self.student.username}: {self.message[:20]}"
+
+class EBook(models.Model):
+    FORMAT_CHOICES = (
+        ('PDF', 'PDF'),
+        ('EPUB', 'EPUB'),
+    )
+
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=100)
+    isbn = models.CharField(max_length=13, blank=True, null=True)
+    category = models.CharField(max_length=50)
+
+    description = models.TextField(blank=True, null=True)
+
+    ebook_file = models.FileField(upload_to='ebooks/')  # PDF / EPUB
+    cover_image = CloudinaryField('ebook cover', blank=True, null=True)
+
+    format = models.CharField(max_length=10, choices=FORMAT_CHOICES)
+
+    is_active = models.BooleanField(default=True)
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.format})"
+    
+
+
+class EBookBookmark(models.Model):
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'MEMBER'}
+    )
+    ebook = models.ForeignKey(EBook, on_delete=models.CASCADE)
+
+    # For PDF: page_number
+    page_number = models.PositiveIntegerField(null=True, blank=True)
+
+    # For EPUB / advanced readers
+    location = models.CharField(max_length=255, blank=True, null=True)
+
+    note = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("student", "ebook", "page_number")
+
+    def __str__(self):
+        return f"{self.student.username} bookmark @ {self.page_number}"

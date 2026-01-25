@@ -5,7 +5,7 @@ from .views import (RegisterUserView,UserLoginView,BookCreateView,BookUpdateView
     StudentBookRequestsListView,AdminBorrowRecordsAPIView,AdminUserListAPIView,AdminUserDetailAPIView,BookCopyDeleteAPIView,
     AdminBookRequestsListView,StudentBorrowRecordsAPIView,LogoutView,
     BookRequestUpdateStatusView,BookSearchView,AdminBookListView,scanner_borrow_api,scanner_return_api,
-    RequestBookNotification,MyNotifications)
+    RequestBookNotification,MyNotifications,EBookCreateView,EBookDetailView,EBookListView,AddEBookBookmarkView,DeleteEBookBookmarkView,StudentEBookBookmarksView)
 from . import views
 
 urlpatterns = [
@@ -42,6 +42,16 @@ urlpatterns = [
     path('scanner-borrow/', scanner_borrow_api, name='scanner-borrow'),
     path('scanner-return/', scanner_return_api, name='scanner-return'),
 
+
+    # ebooks
+    path("ebooks/", EBookListView.as_view()),
+    path("ebooks/<int:id>/", EBookDetailView.as_view()),
+    path("ebooks/create/", EBookCreateView.as_view()),
+
+    # bookmarks
+    path("ebooks/bookmarks/add/", AddEBookBookmarkView.as_view()),
+    path("ebooks/bookmarks/", StudentEBookBookmarksView.as_view()),
+    path("ebooks/bookmarks/<int:id>/delete/", DeleteEBookBookmarkView.as_view()),
 
 
      path("logout/", LogoutView.as_view(), name="logout"),

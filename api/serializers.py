@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification
+from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification,EBook,EBookBookmark
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
@@ -177,3 +177,18 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'message', 'read', 'created_at']
+
+
+
+
+class EBookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EBook
+        fields = "__all__"
+
+
+class EBookBookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EBookBookmark
+        fields = "__all__"
+        read_only_fields = ["student"]

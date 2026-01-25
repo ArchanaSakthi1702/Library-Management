@@ -1,12 +1,13 @@
 from rest_framework import generics,status,permissions
-from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification
-from .serializers import UserRegisterSerializer,BookSerializer,BookRequestSerializer,BorrowRecordSerializer,UserSerializer,StudentBorrowRecordSerializer,BookNotificationRequestSerializer,NotificationSerializer
+from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification,EBookBookmark,EBook
+from .serializers import UserRegisterSerializer,BookSerializer,BookRequestSerializer,BorrowRecordSerializer,UserSerializer,StudentBorrowRecordSerializer,BookNotificationRequestSerializer,NotificationSerializer,EBookBookmarkSerializer,EBookSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from api import serializers
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import ListAPIView
 
@@ -739,3 +740,56 @@ class MyNotifications(ListAPIView):
 
     def get_queryset(self):
         return Notification.objects.filter(student=self.request.user).order_by('-created_at')
+    
+
+
+
+#Ebooks
+
+class EBookCreateView(generics.CreateAPIView):
+    queryset = EBook.objects.all()
+    serializer_class = EBookSerializer
+    permission_classes = [IsAdminUser]
+
+
+class EBookListView(generics.ListAPIView):
+    queryset = EBook.objects.filter(is_active=True)
+    serializer_class = EBookSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class EBookDetailView(generics.RetrieveAPIView):
+    queryset = EBook.objects.filter(is_active=True)
+    serializer_class = EBookSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+
+class AddEBookBookmarkView(generics.CreateAPIView):
+    serializer_class = EBookBookmarkSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(student=self.request.user)
+
+
+class StudentEBookBookmarksView(generics.ListAPIView):
+    serializer_class = EBookBookmarkSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        ebook_id = self.request.query_params.get("ebook")
+        qs = EBookBookmark.objects.filter(student=self.request.user)
+        if ebook_id:
+            qs = qs.filter(ebook_id=ebook_id)
+        return qs.order_by("-created_at")
+
+class DeleteEBookBookmarkView(generics.DestroyAPIView):
+    queryset = EBookBookmark.objects.all()
+    serializer_class = EBookBookmarkSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+
+    def perform_destroy(self, instance):
+        if instance.student != self.request.user:
+            raise PermissionDenied("You cannot delete this bookmark")
+        instance.delete()

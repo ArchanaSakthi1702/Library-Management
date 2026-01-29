@@ -153,6 +153,7 @@ class Notification(models.Model):
     def _str_(self):
         return f"Notification for {self.student.username}: {self.message[:20]}"
 
+
 class EBook(models.Model):
     FORMAT_CHOICES = (
         ('PDF', 'PDF'),
@@ -166,19 +167,26 @@ class EBook(models.Model):
 
     description = models.TextField(blank=True, null=True)
 
-    ebook_file = models.FileField(upload_to='ebooks/')  # PDF / EPUB
-    cover_image = CloudinaryField('ebook cover', blank=True, null=True)
+    # Cloudinary raw file upload (PDF / EPUB)
+    ebook_file = CloudinaryField(
+        resource_type='raw',
+        folder='ebooks'
+    )
+
+    # Cloudinary image upload
+    cover_image = CloudinaryField(
+        'ebook cover',
+        folder='ebook_covers',
+        blank=True,
+        null=True
+    )
 
     format = models.CharField(max_length=10, choices=FORMAT_CHOICES)
-
     is_active = models.BooleanField(default=True)
-
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} ({self.format})"
-    
-
 
 class EBookBookmark(models.Model):
     student = models.ForeignKey(

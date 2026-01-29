@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification,EBook,EBookBookmark
+from cloudinary.utils import cloudinary_url
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
@@ -180,13 +181,37 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 
-
 class EBookSerializer(serializers.ModelSerializer):
+    ebook_file = serializers.SerializerMethodField()
+    cover_image = serializers.SerializerMethodField()
+
     class Meta:
         model = EBook
         fields = "__all__"
 
+    def get_ebook_file(self, obj):
+        if not obj.ebook_file:
+            return None
+        # Add the proper file extension
+        file_format = obj.format.lower()  # 'pdf' or 'epub'
+        url, _ = cloudinary_url(
+            obj.ebook_file.public_id,
+            resource_type='raw',
+            format=file_format  # ensures .pdf or .epub is in the URL
+        )
+        return url
 
+    def get_cover_image(self, obj):
+        if not obj.cover_image:
+            return None
+        # Ensure the image has proper extension (jpg/png)
+        # Use the original format if stored, or force jpg
+        url, _ = cloudinary_url(
+            obj.cover_image.public_id,
+            format='jpg'  # you can also use 'png' if your images are PNG
+        )
+        return url
+    
 class EBookBookmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = EBookBookmark

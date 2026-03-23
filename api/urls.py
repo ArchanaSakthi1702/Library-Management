@@ -1,11 +1,22 @@
 from django.urls import path
-from .views import (RegisterUserView,UserLoginView,BookCreateView,BookUpdateView,
-                    BookDeleteView,BookBulkDeleteView,ReturnBookView,
-                        BookRequestCreateView,AvailableBooksAPIView,
-    StudentBookRequestsListView,AdminBorrowRecordsAPIView,AdminUserListAPIView,AdminUserDetailAPIView,BookCopyDeleteAPIView,
+from .views import (
+    RegisterUserView,UserLoginView,BookCreateView,BookUpdateView,
+    BookDeleteView,BookBulkDeleteView,ReturnBookView,
+    BookRequestCreateView,AvailableBooksAPIView,
+    StudentBookRequestsListView,AdminBorrowRecordsAPIView,
+    AdminUserListAPIView,AdminUserDetailAPIView,BookCopyDeleteAPIView,
     AdminBookRequestsListView,StudentBorrowRecordsAPIView,LogoutView,
-    BookRequestUpdateStatusView,BookSearchView,AdminBookListView,scanner_borrow_api,scanner_return_api,
-    RequestBookNotification,MyNotifications,EBookCreateView,EBookDetailView,EBookListView,AddEBookBookmarkView,DeleteEBookBookmarkView,StudentEBookBookmarksView)
+    BookRequestUpdateStatusView,BookSearchView,AdminBookListView,
+    scanner_borrow_api,scanner_return_api,
+    RequestBookNotification,MyNotifications,EBookCreateView,
+    EBookDetailView,EBookListView,AddEBookBookmarkView,
+    DeleteEBookBookmarkView,StudentEBookBookmarksView,ReadingStreakAPI,
+    CreateLibraryEntryRequestView,
+    ListLibraryEntryRequestsView,
+    HandleLibraryEntryRequestView,
+     MyAttendanceHistoryView,
+    StudentAttendanceHistoryView
+    )
 from . import views
 
 urlpatterns = [
@@ -52,6 +63,16 @@ urlpatterns = [
     path("ebooks/bookmarks/add/", AddEBookBookmarkView.as_view()),
     path("ebooks/bookmarks/", StudentEBookBookmarksView.as_view()),
     path("ebooks/bookmarks/<int:id>/delete/", DeleteEBookBookmarkView.as_view()),
+
+
+    path("reading-streak/", ReadingStreakAPI.as_view()),
+
+    path("entry-request/", CreateLibraryEntryRequestView.as_view()),
+    path("entry-requests/", ListLibraryEntryRequestsView.as_view()),
+    path("entry-request/<int:pk>/action/", HandleLibraryEntryRequestView.as_view()),
+    path("my-attendance/", MyAttendanceHistoryView.as_view()),
+    path("attendance/<int:student_id>/", StudentAttendanceHistoryView.as_view()),
+
 
 
      path("logout/", LogoutView.as_view(), name="logout"),

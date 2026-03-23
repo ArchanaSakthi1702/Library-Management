@@ -211,3 +211,58 @@ class EBookBookmark(models.Model):
 
     def __str__(self):
         return f"{self.student.username} bookmark @ {self.page_number}"
+
+
+
+class LibraryEntryRequest(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    )
+
+    student = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'MEMBER'}
+    )
+
+    request_date = models.DateTimeField(auto_now_add=True)
+
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='PENDING'
+    )
+
+    admin_comment = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.student.username} - {self.status}"
+    
+
+
+class LibraryAttendance(models.Model):
+    student = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'MEMBER'}
+    )
+
+    date = models.DateField(auto_now_add=True)
+    check_in_time = models.DateTimeField(null=True, blank=True)
+
+    status = models.CharField(
+        max_length=10,
+        choices=(
+            ('PRESENT', 'Present'),
+            ('ABSENT', 'Absent'),
+        ),
+        default='ABSENT'
+    )
+
+    class Meta:
+        unique_together = ('student', 'date')
+
+    def __str__(self):
+        return f"{self.student.username} - {self.date} ({self.status})"

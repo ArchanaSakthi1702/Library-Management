@@ -76,9 +76,12 @@ WSGI_APPLICATION = 'lms_backend.wsgi.application'
 # Database from .env
 DATABASE_URL = os.environ.get("DATABASE_URL")
 DATABASES = {
-    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    'default': dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True  # required for Render / production
+    )
 }
-
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True
 

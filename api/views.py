@@ -1,8 +1,19 @@
 from rest_framework import generics,status,permissions
-from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification,EBookBookmark,EBook
-from .serializers import UserRegisterSerializer,BookSerializer,BookRequestSerializer,BorrowRecordSerializer,UserSerializer,StudentBorrowRecordSerializer,BookNotificationRequestSerializer,NotificationSerializer,EBookBookmarkSerializer,EBookSerializer
+from .models import (CustomUser,Book,BookCopy,
+                     BookRequest,BorrowRecord,
+                     BookNotificationRequest,
+                     Notification,EBookBookmark,LibraryAttendance,
+                     EBook,LibraryEntryRequest)
+from .serializers import (UserRegisterSerializer,BookSerializer,
+                          BookRequestSerializer,BorrowRecordSerializer,
+                          UserSerializer,StudentBorrowRecordSerializer,
+                          BookNotificationRequestSerializer,
+                          NotificationSerializer,EBookBookmarkSerializer,
+                          EBookSerializer,LibraryEntryRequestSerializer,
+                          LibraryAttendanceSerializer)
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from api import serializers
@@ -793,3 +804,118 @@ class DeleteEBookBookmarkView(generics.DestroyAPIView):
         if instance.student != self.request.user:
             raise PermissionDenied("You cannot delete this bookmark")
         instance.delete()
+
+from .utils import get_badge,calculate_reading_streak
+
+class ReadingStreakAPI(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        student = request.user
+
+        streak = calculate_reading_streak(student)
+
+        badge = get_badge(streak)
+
+        return Response({
+            "student": student.username,
+            "reading_streak_months": streak,
+            "badge": badge
+        })
+    
+
+
+class CreateLibraryEntryRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        # Prevent multiple requests per day (optional but recommended)
+        existing = LibraryEntryRequest.objects.filter(
+            student=request.user,
+            request_date__date=date.today()
+        ).exists()
+
+        if existing:
+            return Response(
+                {"error": "You already requested today."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        entry_request = LibraryEntryRequest.objects.create(
+            student=request.user
+        )
+
+        serializer = LibraryEntryRequestSerializer(entry_request)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class ListLibraryEntryRequestsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        requests = LibraryEntryRequest.objects.all().order_by("-request_date")
+        serializer = LibraryEntryRequestSerializer(requests, many=True)
+        return Response(serializer.data)
+    
+
+class HandleLibraryEntryRequestView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            entry_request = LibraryEntryRequest.objects.get(id=pk)
+        except LibraryEntryRequest.DoesNotExist:
+            return Response({"error": "Request not found"}, status=404)
+
+        action = request.data.get("action")  # "approve" or "reject"
+
+        if action == "approve":
+            entry_request.status = "APPROVED"
+            entry_request.save()
+
+            # Create attendance record
+            LibraryAttendance.objects.update_or_create(
+                student=entry_request.student,
+                date=date.today(),
+                defaults={
+                    "status": "PRESENT",
+                    "check_in_time": timezone.now()
+                }
+            )
+
+            return Response({"message": "Approved & marked PRESENT"})
+
+        elif action == "reject":
+            entry_request.status = "REJECTED"
+            entry_request.admin_comment = request.data.get("comment", "")
+            entry_request.save()
+
+            return Response({"message": "Request rejected"})
+
+        return Response({"error": "Invalid action"}, status=400)
+    
+
+
+class MyAttendanceHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        records = LibraryAttendance.objects.filter(
+            student=request.user
+        ).order_by("-date")
+
+        serializer = LibraryAttendanceSerializer(records, many=True)
+        return Response(serializer.data)
+    
+class StudentAttendanceHistoryView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, student_id):
+        records = LibraryAttendance.objects.filter(
+            student_id=student_id
+        ).order_by("-date")
+
+        serializer = LibraryAttendanceSerializer(records, many=True)
+        return Response(serializer.data)

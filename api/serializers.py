@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification,EBook,EBookBookmark
+from .models import CustomUser,Book,BookCopy,BookRequest,BorrowRecord,BookNotificationRequest,Notification,EBook,EBookBookmark,LibraryEntryRequest,LibraryAttendance
 from cloudinary.utils import cloudinary_url
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -217,3 +217,21 @@ class EBookBookmarkSerializer(serializers.ModelSerializer):
         model = EBookBookmark
         fields = "__all__"
         read_only_fields = ["student"]
+
+
+
+class LibraryEntryRequestSerializer(serializers.ModelSerializer):
+    student_username = serializers.CharField(source="student.username", read_only=True)
+
+    class Meta:
+        model = LibraryEntryRequest
+        fields = "__all__"
+        read_only_fields = ("student", "status", "request_date")
+
+
+class LibraryAttendanceSerializer(serializers.ModelSerializer):
+    student_username = serializers.CharField(source="student.username", read_only=True)
+
+    class Meta:
+        model = LibraryAttendance
+        fields = "__all__"
